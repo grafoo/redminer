@@ -42,3 +42,35 @@
 (provide 'redminer)
 ;;; redminer.el ends here
 
+(defun http-get (url)
+  (with-current-buffer (url-retrieve-synchronously url)
+    (goto-char (point-min))
+    (goto-char (search-forward-regexp "^$"))
+    (prog1 (json-read) (kill-buffer))))
+
+(defun lookup-project-id ()
+  "list of project names using helm"
+  ;; (let ((projects (mapcar (lambda (project) (list (alist-get 'name project) (alist-get 'id project)))(alist-get 'projects (http-get "http://demo.redmine.org/projects.json")))))
+  (setq projects
+        (mapcar (lambda (project)
+                  (list
+                   (alist-get 'name project)
+                   (alist-get 'id project)))
+                (alist-get 'projects (http-get "http://demo.redmine.org/projects.json"))))
+
+  (helm :sources `((name . "projects")
+                   (candidates . ,(mapcar (lambda (project) (car project)) projects))
+                   (action . (lambda (candidate) (cadr (assoc candidate projects)))))))
+
+(defun browse-issues ()
+  "return all issues for a given project id"
+  (setq project-id (lookup-project-id))
+          (setq url
+                (format "http://demo.redmine.org/issues.json?project_id=%s" project-id))
+  (setq issues (alist-get 'issues (http-get url)) )
+  (helm :sources `((name . "issues")
+                   (candidates . ,(mapcar (lambda (issue) (alist-get 'subject issue)) issues))
+                   (action . (lambda (candidate) ())))))
+
+(browse-issues)
+
