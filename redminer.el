@@ -48,23 +48,23 @@
 
 
 (defun redminer-fetch-issue-as-org-link ()
-  "insert issue subject and url as org formated link at point"
+  "Insert issue subject and url as org formated link at point."
   (interactive)
-  ;; (if (boundp 'redminer-hostname))
-  (setq project-id (lookup-project-id))
-  (setq url
-        (format "http://demo.redmine.org/issues.json?project_id=%s" project-id))
-  (setq issues (alist-get 'issues (http-get url)))
+  (if (boundp 'redminer-hostname)
+      (let* ((project-id (lookup-project-id))
+             (url (format "http://demo.redmine.org/issues.json?project_id=%s" project-id))
+             (issues (alist-get 'issues (http-get url))))
+        (helm :sources (helm-build-sync-source "heading"
+                         :candidates (append issues nil)
+                         :candidate-transformer #'(lambda (issues)
+                                                    (mapcar #'(lambda (issue)
+                                                                (list (alist-get 'subject issue)
+                                                                      (format "http://demo.redmine.org/issues/%d" (alist-get 'id issue))
+                                                                      (alist-get 'description issue)))
+                                                            issues))
+                         :action (lambda (issue) (insert (format "[[%s][%s]]" (car issue) (cadr issue)))))))
+    (message "no hostname defined. please bind a redmine hostname to redminer-hostname.")))
 
-  (helm :sources (helm-build-sync-source "heading"
-                   :candidates (append issues nil)
-                   :candidate-transformer #'(lambda (issues)
-                                              (mapcar #'(lambda (issue)
-                                                          (list (alist-get 'subject issue)
-                                                                (format "http://demo.redmine.org/issues/%d" (alist-get 'id issue))
-                                                                (alist-get 'description issue)))
-                                                      issues))
-                   :action (lambda (issue) (insert (format "[[%s][%s]]" (car issue) (cadr issue)))))))
 
 (provide 'redminer)
 ;;; redminer.el ends here
