@@ -1,7 +1,7 @@
 ;; this file should be placed at ~/.config/redminer/config.el
 
 ;; required
-(setq redminer-hostname "foo.bar.baz")
+(setq redminer-hostname "http://foo.bar.baz")
 
 ;; optional
 ;; can be found via http://foo.bar.baz/my/account (API access key -> Show)
