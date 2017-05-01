@@ -36,13 +36,23 @@
 
 (defun get-redmine-data (section limit offset id)
   "List of project names using helm; takes SECTION, LIMIT, OFFSET and project ID."
-  (if id (alist-get section (http-get (format "%s/%s.json?key=%s&limit=%s&offset=%s&project_id=%s" redminer-hostname section redminer-key limit offset id)))
+  (if id
+      (cond
+       ((equal 'integer (type-of id))
+	(alist-get section
+		   (http-get (format "%s/%s.json?key=%s&limit=%s&offset=%s&project_id=%s"
+				     redminer-hostname section redminer-key limit offset id))))
+       ((equal 'string (type-of id))
+	(alist-get 'issue
+		   (http-get (format "%s/issues/%s.json?key=%s&limit=%s&offset=%s&include=%s"
+				     redminer-hostname section redminer-key limit offset id)))))
     (mapcar (lambda (project)
 	      (list
 	       (alist-get 'name project)
 	       (alist-get 'id project)))
 	    (alist-get section
-		       (http-get (format "%s/%s.json?key=%s&limit=%s&offset=%s&project_id=%s" redminer-hostname section redminer-key limit offset id))))))
+		       (http-get (format "%s/%s.json?key=%s&limit=%s&offset=%s&project_id=%s"
+					 redminer-hostname section redminer-key limit offset id))))))
 
 
 (defun redmine-grabber (section id)
@@ -52,9 +62,12 @@
 	(i 0)
 	(project_name (car id))
 	(id (cadr id)))
-    (if id (while (append (get-redmine-data section 1 i id) nil)
-	     (setq r (append r (append (get-redmine-data section 100 i id) nil)))
-	     (setq i (+ i 100)))
+    (if id
+	(if (equal 'string (type-of id))
+	    (setq r (get-redmine-data section 1 i id))
+	  (while (append (get-redmine-data section 1 i id) nil)
+	    (setq r (append r (append (get-redmine-data section 100 i id) nil)))
+	    (setq i (+ i 100))))
       (while (get-redmine-data section 1 i id)
 	(setq r (append r (get-redmine-data section 100 i id)))
 	(setq i (+ i 100))))
@@ -108,12 +121,16 @@
 								    redminer-hostname
 								    (alist-get 'id issue))
 							    (alist-get 'subject issue)
-							    (alist-get 'description issue)))
+							    (alist-get 'description issue)
+							    (alist-get 'id issue)))
 						    issues))
 		   :action (helm-make-actions
 			    "Open URL in Browser" (lambda (issue) (browse-url (car issue)))
 			    "Insert into org" (lambda (issue) (insert (format "[[%s][%s]]" (car issue) (cadr issue))))
 			    "List Projects" (lambda (i) (lookup-redmine-projects))
+			    "Print issue" (lambda (issue)
+					    (print
+					     (redmine-grabber (cadr (cdr (cdr issue))) (list (cadr issue) "journals"))))
 			    "Print candidate" (lambda (candidate) (print candidate))))))
 
 
