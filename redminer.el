@@ -82,14 +82,17 @@
 		     ((not (boundp 'redminer-key)) (error "INT/SYMBOL(nil) 'redminer-key not set")))
 	     (error (princ (format "Error: %s" err)))))
       (if (boundp 'redminer-default-project-id)
-	  (lookup-issues-in-project
-	   (redmine-grabber 'issues
-				      (list
-				       (get-name-from-id
-					(cadr (redmine-grabber 'projects nil))
-					redminer-default-project-id)
-				       redminer-default-project-id)))
-	(lookup-redmine-projects))))
+	  (if (boundp 'redminer-issues)
+	      (lookup-issues-in-project redminer-issues)
+	    (lookup-issues-in-project
+	     (redmine-grabber 'issues
+			      (list
+			       (get-name-from-id
+				(cadr (redmine-grabber 'projects nil))
+				redminer-default-project-id)
+			       redminer-default-project-id)))
+	    (lookup-redmine-projects)))))
+
 
 (defun lookup-redmine-projects ()
   "List of project names using helm."
@@ -101,14 +104,18 @@
 						      (cadr (redmine-grabber 'projects nil)))))
 				       x)
 			 :action (helm-make-actions
-				  "List Issues" (lambda (candidate)
-				    (lookup-issues-in-project (redmine-grabber 'issues (car candidate))))
-			 ))))
+				  "List Issues" (lambda (project)
+				    (lookup-issues-in-project (redmine-grabber 'issues (car project))))
+				  "Save Issues of Project" (lambda (project)
+							     (setq redminer-issues (redmine-grabber 'issues (car project)))
+							     (setq redminer-default-project-id (cadr (car project)))
+							     (print (format "Issues of %s saved" (car (car project)))))))))
 
 
 (defun lookup-issues-in-project (issues)
   "List ISSUES in given project."
   (helm :sources (helm-build-sync-source (format "Issues of %s" (car issues))
+		   :candidate-number-limit 999
 		   :candidates (cadr issues)
 		   :candidate-transformer (lambda (issues)
 					    (mapcar (lambda (issue)
