@@ -24,6 +24,7 @@
 ;; (setq redminer-hostname "http://demo.redmine.org")
 ;; (setq redminer-key nil)
 ;; (setq redminer-default-project-id 0) ;; optional
+(load-file "~/.config/redminer/config.el")
 
 
 (defun http-get (url)
@@ -81,9 +82,9 @@
 	       (cond ((not (boundp 'redminer-hostname)) (error "STRING 'redminer-hostname not set"))
 		     ((not (boundp 'redminer-key)) (error "INT/SYMBOL(nil) 'redminer-key not set")))
 	     (error (princ (format "Error: %s" err)))))
-      (if (boundp 'redminer-default-project-id)
-	  (if (boundp 'redminer-issues)
-	      (lookup-issues-in-project redminer-issues)
+      (if (boundp 'redminer-issues)
+	  (lookup-issues-in-project redminer-issues)
+	(if (boundp 'redminer-default-project-id)
 	    (lookup-issues-in-project
 	     (redmine-grabber 'issues
 			      (list
@@ -91,7 +92,7 @@
 				(cadr (redmine-grabber 'projects nil))
 				redminer-default-project-id)
 			       redminer-default-project-id)))
-	    (lookup-redmine-projects)))))
+	  (lookup-redmine-projects)))))
 
 
 (defun lookup-redmine-projects ()
