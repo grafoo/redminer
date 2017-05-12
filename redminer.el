@@ -134,31 +134,28 @@
 						    issues))
 		   :action (helm-make-actions
 			    "Open URL in Browser" (lambda (issue) (browse-url (car issue)))
-			    "Insert into org" (lambda (issue) (insert (format "[[%s][%s]]" (car issue) (cadr issue))))
+			    "Insert Link into org" (lambda (issue) (insert (format "[[%s][%s]]" (car issue) (cadr issue))))
 			    "List Projects" (lambda (i) (lookup-redmine-projects))
-			    "Show Issue in Buffer" (lambda (issue) (show-redmine-issue-inbuffer issue))
+			    "Show Issue in org Buffer" (lambda (issue) (show-redmine-issue-inbuffer issue))
 			    ;; "Print issue" (lambda (issue)
 			    ;; 		    (print
 			    ;; 		     (redmine-grabber (cadr (cdr (cdr issue))) (list (cadr issue) "journals"))))
 			    ;; "Print candidate" (lambda (candidate) (print candidate))
 			    ))))
 
+
 (defun show-redmine-issue-inbuffer (issue)
   "Show ISSUE in buffer."
-  (let* ((i (redmine-grabber (cadr (cdr (cdr issue))) (list (cadr issue) "journals")))
-	 )
+  (let* ((i (redmine-grabber (cadr (cdr (cdr issue))) (list (cadr issue) "journals"))))
     (get-buffer-create "redminer")
     (with-output-to-temp-buffer "redminer"
       (mapc (lambda (a)
 	      (princ
 	       (format "* %s\n%s\n"
 		       (car a)
-		       (cdr a))
-	       )
-	      )
+		       (cdr a))))
 	    (car (cdr i))))
-    (with-current-buffer "redminer" (org-mode))
-    ))
+    (with-current-buffer "redminer" (org-mode))))
 
 
 (defun get-name-from-id (data id)
